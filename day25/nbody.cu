@@ -19,10 +19,12 @@ __device__ inline float3 addFloat3(const float3 &a, const float3 &b)
     return make_float3(a.x + b.x, a.y + b.y, a.z + b.z);
 }
 
+
 __device__ inline float3 subFloat3(const float3 &a, const float3 &b)
 {
 
     return make_float3(a.x - b.x, a.y - b.y, a.z - b.z);
+
 }
 
 __device__ inline float3 scaleFloat3(const float3 &a, float s)
