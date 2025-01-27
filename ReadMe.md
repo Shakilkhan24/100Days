@@ -2,7 +2,7 @@
 
 Bro in CUDA 📗 : https://github.com/a-hamdi/cuda
 
-Mentor 🚀 : https://github.com/hkproj
+Mentor 🚀 : https://github.com/hkproj | https://github.com/hkproj/100-days-of-gpu
 ### Mandatory and Optional Tasks
 | Day   | Task Description                                                                                     |
 |-------|-----------------------------------------------------------------------------------------------------|
@@ -25,6 +25,9 @@ Mentor 🚀 : https://github.com/hkproj
 | day8  | **pmpbook/chapter3matvecmul.cu**: Matrix-vector multiplication.<br>**pmpbook/chapter3ex.cu**: Benchmarks different matrix add kernels.<br>**pmpbook/deviceinfo.cu**: Prints device properties.<br>**pmpbook/color2gray.cu**: Convert RGB to grayscale.<br>**pmpbook/vecaddition.cu**: Another vector addition example.<br>**pmpbook/imageblur.cu**: Simple image blur.<br>**selfAttention/selfAttention.cu**: Self-attention kernel with online softmax. |
 | day9  | **flashAttentionFromTut.cu**: Minimal Flash Attention kernel with shared memory tiling.<br>**bind.cpp**: Torch C++ extension bindings for Flash Attention.<br>**test.py**: Tests the minimal Flash Attention kernel against a manual softmax-based attention for comparison. |
 | day10 | **ppmbook/matrixmul.cu**: Matrix multiplication using CUDA.<br>**setup.py**: Torch extension build script for CUDA code (FlashAttention).<br>**FlashAttention.cu**: Example Flash Attention CUDA kernel.<br>**FlashAttention.cpp**: Torch bindings for the Flash Attention kernel.<br>**test.py**: Manual vs. CUDA-based attention test.<br>**linking/test.py**: Builds simple CUDA kernel for testing linking.<br>**linking/simpleKernel.cpp**: Torch extension binding for a simple CUDA kernel.<br>**linking/simpleKernel.cu**: Simple CUDA kernel that increments a tensor. |
+| day11 | **FlashTestPytorch/**: Custom Flash Attention in PyTorch, tests and benchmarks.<br>**testbackward.py**: Gradient comparison between custom CUDA kernels and PyTorch. |
+| day12 | **softMax.cu**: Additional softmax kernel with shared memory optimization.<br>**NN/kernels.cu**: Tiled kernel implementation and layer initialization.<br>**tileMatrix.cu**: Demonstrates tile-based matrix operations. |
+
 | nvidiadocs | **addition.cu**: 1D/2D vector/matrix addition examples.                                                                                                                                                                                      |
 
 #### How to load into Pytorch:
