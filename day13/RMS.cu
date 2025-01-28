@@ -3,57 +3,34 @@
 // Define the CEILING macro
 #define CEILING(x, y) (((x) + (y) - 1) / (y))
 
-// WIll do it for vecotrs only
 #define blockdimy 128
-__global__ void RMSKernel1_V1(float *input, float *output, int w, int h)
+
+__global__ void RMSKernel1_V1(float *input, float *output, const int w, const int h)
 {
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
 
-    int row = blockIdx.x;
-    int ty = threadIdx.y;
-    int wrap_id = ty / 32;
-    int tid = threadIdx.y * blockDim.x + threadIdx.x;
-    __shared__ float reduction[blockdimy / 32];
-    float4 reg_array[CEILING((w / 4), blockdimy)];
-    int reg_array_index = 0;
-
-    if (row < h)
+    if (row < h && col < w)
     {
-        float rms_sum = 0;
+        float sum = 0;
+        for (int i = 0; i < w; ++i)
+        {
+            sum += input[row * w + i] * input[row * w + i];
+        }
+        sum = sqrt((float)1 / w * sum);
 
-#pragma unroll
-        for (int i = ty; i < w / 4; i += blockdimy)
-        {
-            float4 val = reinterpret_cast<float4 *>(&input[row * w + i * 4])[0];
-            rms_sum += val.x * val.x;
-            rms_sum += val.y * val.y;
-            rms_sum += val.z * val.z;
-            rms_sum += val.w * val.w;
-
-            reg_array[reg_array_index] = val;
-            reg_array_index += 1;
-        }
-        for (int offset = 16; offset > 0; offset /= 2)
-        {
-            rms_sum += __shfl_down_sync(0xFFFFFFFF, rms_sum, offset);
-        }
-        if (ty % 32 == 0)
-        {
-            reduction[ty / 32] = rms_sum;
-        }
-        __syncthreads();
-        if (ty < (blockdimy / 32))
-        {
-            rms_sum = reduction[ty];
-        }
-        __syncthreads();
-        if (tid == 0)
-        {
-            float block_rms = 0;
-            for (int i = 0; i < blockdimy / 32; i++)
-            {
-                block_rms += reduction[i];
-            }
-            output[row] = sqrt(block_rms / w);
-        }
+        output[row + w * col] = input[row * w + col] / sum;
     }
 }
+
+
+void RMSV1(float *input, float *output, int w, int h)
+{
+
+    dim3 block_size = dim3(32, 32);
+    dim3 grid_size = dim3(CEILING(w, 32), CEILING(32, h));
+    RMSKernel1_V1<<<grid_size, block_size>>>(input, output, w, h);
+}
+
+
+
