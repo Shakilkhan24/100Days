@@ -23,7 +23,7 @@ __global__ void convolutionkernel(float *input, float *output, float *kernel,
     inputX = max(0, min(w - 1, inputX));
     inputY = max(0, min(h - 1, inputY));
 
-    sharedInput[ty * (BLOCK_SIZE + radius * radius) + tx] = input[inputY * w + inputX];
+    sharedInput[ty * (BLOCK_SIZE + radius ) + tx] = input[inputY * w + inputX];
     __syncthreads();
 
     if (tx < BLOCK_SIZE && ty < BLOCK_SIZE)
@@ -35,7 +35,7 @@ __global__ void convolutionkernel(float *input, float *output, float *kernel,
             {
                 int sx = tx + kx;
                 int sy = ty + ky;
-                sum += sharedInput[sy * (BLOCK_SIZE + radius * radius) + sx] * sharedFilter[ky * kernel_size + kx];
+                sum += sharedInput[sy * (BLOCK_SIZE + radius ) + sx] * sharedFilter[ky * kernel_size + kx];
             }
         }
         output[(by * BLOCK_SIZE + ty) * w + (bx * BLOCK_SIZE + tx)] = sum;
@@ -54,7 +54,7 @@ int main()
 
     for (int i = 0; i < w * h; ++i)
     {
-        input[i] = static_cast<float>(i + 1); // Values from 1 to 25
+        input[i] = 1; // Values from 1 to 25
     }
 
     for (int i = 0; i < kernel_size * kernel_size; ++i)
