@@ -28,7 +28,9 @@ Mentor 🚀 : https://github.com/hkproj | https://github.com/hkproj/100-days-of-
 | day11 | **FlashTestPytorch/**: Custom Flash Attention in PyTorch, tests and benchmarks.<br>**testbackward.py**: Gradient comparison between custom CUDA kernels and PyTorch. |
 | day12 | **softMax.cu**: Additional softmax kernel with shared memory optimization.<br>**NN/kernels.cu**: Tiled kernel implementation and layer initialization.<br>**tileMatrix.cu**: Demonstrates tile-based matrix operations. |
 | day13 | **RMS.cu**: RMS kernel (V1) with naive sum-of-squares approach.<br>**RMSBetter.cu**: RMS kernel (V2) using warp-reduce optimization,float4 +others .<br>**binding.cpp**: Torch bindings for RMS kernels.<br>**test.py**: Tests and benchmarks RMS kernels vs PyTorch. |
-
+| day14 | **FA2/flash.cu & kernels.cu**: Second iteration of Flash Attention featuring partial forward/backward logic. <br>**helper.cuh**: Utility functions and warp-reduce helpers. <br>**conv.cu**: Basic 2D convolution with shared memory. |
+| day15 | **Attention.cu**: Single-headed attention kernel vs. CPU reference. <br>**dotproduct.cu**: Batched/tiled dot-product kernel for vectors or matrices. <br>**SMM.cu**: Sparse matrix multiplication in CSR format. |
+| day16 | **attentionbwkd.cu**: Extends attention with gradient computation; forward & backward passes. |
 
 #### How to load into Pytorch:
 - (optional) create tempalte kernel
