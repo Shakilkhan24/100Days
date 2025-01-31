@@ -9,10 +9,9 @@ seq_len = 4
 dim = 4
 
 # Initialize the tensors
-Q = torch.ones(seq_len, dim, requires_grad=True)
-K = torch.ones(seq_len, dim, requires_grad=True)
-V = torch.ones(seq_len, dim, requires_grad=True)
-
+Q = torch.full((seq_len, dim), 2.0, requires_grad=True)
+K = torch.full((seq_len, dim), 2.0, requires_grad=True)
+V = torch.full((seq_len, dim), 2.0, requires_grad=True)
 # Forward pass
 scores = torch.matmul(Q, K.transpose(-2, -1)) / (dim ** 0.5)
 P = F.softmax(scores, dim=-1)

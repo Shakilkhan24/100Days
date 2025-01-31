@@ -80,7 +80,7 @@ __global__ void attention_backward(float *Q, float *K, float *V, float *P, float
         {
             sum_dP += dO[row * dim + i] * V[col * dim + i];
         }
-        
+
         dS[row * seq_len + col] = P[row * seq_len + col] * (sum_dP - P[row * seq_len + col] * sum_dP);
     }
 
@@ -104,6 +104,7 @@ __global__ void attention_backward(float *Q, float *K, float *V, float *P, float
         dK[row * seq_len + col] = sum_dK;
     }
 }
+
 void launch_attention_forward(float *Q, float *K, float *V, float *P, float *O, int seq_len, int dim)
 {
     dim3 blockDim(BLOCK_SIZE, BLOCK_SIZE);
@@ -127,11 +128,11 @@ int main()
     size_t size_QKV = seq_len * dim * sizeof(float);
     size_t size_PdS = seq_len * seq_len * sizeof(float);
 
-    std::vector<float> h_Q(seq_len * dim, 1.0f);
-    std::vector<float> h_K(seq_len * dim, 1.0f);
-    std::vector<float> h_V(seq_len * dim, 1.0f);
-    std::vector<float> h_P(seq_len * seq_len, 0.25f);
-    std::vector<float> h_dO(seq_len * dim, 1.0f);
+    std::vector<float> h_Q(seq_len * dim, 2.0f);
+    std::vector<float> h_K(seq_len * dim, 2.0f);
+    std::vector<float> h_V(seq_len * dim, 2.0f);
+    std::vector<float> h_P(seq_len * seq_len, 0.0f);
+    std::vector<float> h_dO(seq_len * dim, 2.0f);
     std::vector<float> h_O(seq_len * dim);
 
     float *d_Q, *d_K, *d_V, *d_P, *d_dO, *d_dQ, *d_dK, *d_dV, *d_dS, *d_O;
@@ -146,6 +147,12 @@ int main()
     cudaMalloc(&d_dS, size_PdS);
     cudaMalloc(&d_O, size_QKV);
 
+    // Initialize d_dQ, d_dK, and d_dV to zero
+    cudaMemset(d_dQ, 0, size_QKV);
+    cudaMemset(d_dK, 0, size_QKV);
+    cudaMemset(d_dV, 0, size_QKV);
+    cudaDeviceSynchronize();
+
     cudaMemcpy(d_Q, h_Q.data(), size_QKV, cudaMemcpyHostToDevice);
     cudaMemcpy(d_K, h_K.data(), size_QKV, cudaMemcpyHostToDevice);
     cudaMemcpy(d_V, h_V.data(), size_QKV, cudaMemcpyHostToDevice);
@@ -157,7 +164,7 @@ int main()
 
     std::vector<float> O(seq_len * dim);
     cudaMemcpy(O.data(), d_O, size_QKV, cudaMemcpyDeviceToHost);
-     std::cout << "O result:" << std::endl;
+    std::cout << "O result:" << std::endl;
     for (int i = 0; i < seq_len; i++)
     {
         for (int j = 0; j < dim; j++)
@@ -166,6 +173,7 @@ int main()
         }
         std::cout << std::endl;
     }
+
     launch_attention_backward(d_Q, d_K, d_V, d_P, d_dO, d_dQ, d_dK, d_dV, d_dS, seq_len, dim);
 
     std::vector<float> h_dQ(seq_len * dim);
