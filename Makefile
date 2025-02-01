@@ -12,7 +12,7 @@ build: $(PROJECT_DIR)/$(dir)/$(program).out
 
 $(PROJECT_DIR)/$(dir)/$(program).out: $(PROJECT_DIR)/$(dir)/$(program).cu
 	@echo  "$(COLOR_YELLOW)Building program $(program) in directory $(dir)...$(COLOR_RESET)"
-	@nvcc -o $@ $<
+	@nvcc -o $@ $< -lcublas
 	@echo  "$(COLOR_GREEN)Build completed for $(program).out in $(dir)$(COLOR_RESET)"
 
 run: $(PROJECT_DIR)/$(dir)/$(program).out
