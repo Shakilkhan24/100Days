@@ -6,13 +6,15 @@ COLOR_YELLOW := \033[33m
 COLOR_BLUE := \033[34m
 COLOR_RED := \033[31m
 
+CUDA_ARCH := sm_89  # Specify CUDA architecture (e.g., sm_89 for RTX 4070)
+
 all: build
 
 build: $(PROJECT_DIR)/$(dir)/$(program).out
 
 $(PROJECT_DIR)/$(dir)/$(program).out: $(PROJECT_DIR)/$(dir)/$(program).cu
 	@echo  "$(COLOR_YELLOW)Building program $(program) in directory $(dir)...$(COLOR_RESET)"
-	@nvcc -o $@ $< -lcublas
+	@nvcc -arch=$(CUDA_ARCH) -o $@ $< -lcublas
 	@echo  "$(COLOR_GREEN)Build completed for $(program).out in $(dir)$(COLOR_RESET)"
 
 run: $(PROJECT_DIR)/$(dir)/$(program).out
