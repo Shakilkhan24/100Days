@@ -15,7 +15,8 @@
     {                                              \
         std::cerr << "cuBLAS error!" << std::endl; \
         exit(1);                                   \
-    }
+    } 
+
 
 __global__ void softmax_kernel(float *matrix, int rows, int cols)
 {
