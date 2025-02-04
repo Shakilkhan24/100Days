@@ -31,6 +31,10 @@ Mentor 🚀 : https://github.com/hkproj | https://github.com/hkproj/100-days-of-
 | day14 | **FA2/flash.cu & kernels.cu**: Second iteration of Flash Attention featuring partial forward/backward logic. <br>**helper.cuh**: Utility functions and warp-reduce helpers. <br>**conv.cu**: Basic 2D convolution with shared memory. |
 | day15 | **Attention.cu**: Single-headed attention kernel vs. CPU reference. <br>**dotproduct.cu**: Batched/tiled dot-product kernel for vectors or matrices. <br>**SMM.cu**: Sparse matrix multiplication in CSR format. |
 | day16 | **attentionbwkd.cu**: Extends attention with gradient computation; forward & backward passes. |
+| day17 | **cublas1.cu**, **cublas2.cu**, **cublas3.cu**: Various cuBLAS examples for dot products, axpy, max/min, and other BLAS operations. |
+| day18 | **wrap.cu**: Warp-based reduction and max-finding with inline PTX.<br>**atomic1.cu**, **atomic2.cu**: Implement and test custom atomic increment operations. |
+| day19 | **cublasMM.cu**: Matrix multiplication with cuBLAS plus a simple self-attention example. |
+| day20 | **rope.cu**: Rope (rotary positional encoding) kernel and its PyTorch extension.<br>**test_rope.py**: Benchmarks for the rope kernel. |
 
 #### How to load into Pytorch:
 - (optional) create tempalte kernel

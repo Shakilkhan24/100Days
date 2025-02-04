@@ -78,7 +78,7 @@ int main()
     CHECK_CUDA_CALL(cudaMalloc(&d_v, batch_size * seq_len * dim * sizeof(float)));
     CHECK_CUDA_CALL(cudaMalloc(&d_output, batch_size * seq_len * dim * sizeof(float)));
 
-    float h_q[32] = {2};
+    float h_q[32] = {2,213,41,234,1312,334,123,41};
     float h_k[32] = {3};
     float h_v[32] = {4};
 
