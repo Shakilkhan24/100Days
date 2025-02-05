@@ -1,7 +1,9 @@
 import torch
 import time
 from torch.utils.cpp_extension import load
-
+print(torch.__version__)  # Verifică versiunea PyTorch
+print(torch.cuda.is_available())  # Dacă e False, PyTorch nu vede CUDA
+print(torch.version.cuda)  # Verifică versiunea CUDA detectată de
 lib = load(
     name="rope",
     sources=["rope.cu"],
@@ -36,9 +38,18 @@ for M, N in sizes:
     print(f"Testing M={M}, N={N}")
     x = torch.randn((M, N), device='cuda', dtype=torch.float32).contiguous()
     out = torch.zeros_like(x)
-    
+
     t_naive = benchmark(naive_rope, x)
+    naive_out = naive_rope(x)
+    
     t_cuda = benchmark(lib.rope, x, out)
     
+    # Compute the maximum absolute difference
+    max_diff = torch.max(torch.abs(naive_out - out)).item()
+    
     print(f"Naive: {t_naive:.4f}ms, CUDA f32: {t_cuda:.4f}ms")
+    print(f"Max difference: {max_diff:.6f}")
     print("-" * 60)
+
+    
+    
