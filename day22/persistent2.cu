@@ -4,16 +4,17 @@
 #include <chrono>
 #include <thread>
 
-#define IMAGESIZE 1024        
-#define NUM_IMAGES 1024       
-#define QUEUE_CAPACITY 2048   
-#define TARGET_TASKS NUM_IMAGES  
+#define IMAGESIZE 1024
+#define NUM_IMAGES 1024
+#define QUEUE_CAPACITY 2048
+#define TARGET_TASKS NUM_IMAGES
 #define THREADS_PER_BLOCK 256
 
-struct TaskQueue {
-    int *tasks;           
-    volatile int head;    
-    volatile int tail;    
+struct TaskQueue
+{
+    int *tasks;
+    volatile int head;
+    volatile int tail;
     int capacity;
 };
 
@@ -31,12 +32,12 @@ __global__ void persistentKernel(const float *ImageData, float *output, TaskQueu
 {
     while (!(*doneFlag) || (queue->head < queue->tail))
     {
-        int currentHead = atomicAdd((int*)&queue->head, 0);
-        int currentTail = atomicAdd((int*)&queue->tail, 0);
+        int currentHead = atomicAdd((int *)&queue->head, 0);
+        int currentTail = atomicAdd((int *)&queue->tail, 0);
 
         if (currentHead < currentTail)
         {
-            int taskIndex = atomicAdd((int*)&queue->head, 1);
+            int taskIndex = atomicAdd((int *)&queue->head, 1);
             if (taskIndex < currentTail)
             {
                 int imageIndex = queue->tasks[taskIndex];
@@ -54,7 +55,7 @@ __global__ void persistentKernel(const float *ImageData, float *output, TaskQueu
 
 void addTasks(TaskQueue *queue, int startTask, int numTasks)
 {
-    int currentTail = queue->tail;  
+    int currentTail = queue->tail;
     for (int i = 0; i < numTasks; i++)
     {
         if (currentTail < queue->capacity)
@@ -75,7 +76,7 @@ int main()
 {
     size_t imageDataSize = NUM_IMAGES * IMAGESIZE * sizeof(float);
     float *h_ImageData = new float[NUM_IMAGES * IMAGESIZE];
-    float *h_output    = new float[NUM_IMAGES];
+    float *h_output = new float[NUM_IMAGES];
 
     for (int i = 0; i < NUM_IMAGES; i++)
     {
@@ -94,11 +95,11 @@ int main()
 
     bool *doneFlag;
     cudaMallocManaged(&doneFlag, sizeof(bool));
-    *doneFlag = false; 
+    *doneFlag = false;
 
     float *d_ImageData, *d_output;
     cudaMalloc(&d_ImageData, imageDataSize);
-    cudaMalloc(&d_output, NUM_IMAGES * sizeof(float));
+    cudaMallocManaged(&d_output, NUM_IMAGES * sizeof(float));
 
     cudaMemcpy(d_ImageData, h_ImageData, imageDataSize, cudaMemcpyHostToDevice);
 
@@ -106,13 +107,16 @@ int main()
     persistentKernel<<<blocks, THREADS_PER_BLOCK>>>(d_ImageData, d_output, queue, doneFlag);
 
     int tasksAdded = 0;
-    int batchSize = 128; 
+    int batchSize = 128;
+    int index = 0;
     while (tasksAdded < TARGET_TASKS)
     {
         int tasksToAdd = std::min(batchSize, TARGET_TASKS - tasksAdded);
         addTasks(queue, tasksAdded, tasksToAdd);
         tasksAdded += tasksToAdd;
         std::cout << "Added " << tasksAdded << " tasks so far." << std::endl;
+        while (d_output[index] == 0.0f);  
+        std::cout << "output : " << d_output[index++] << std::endl;
 
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
@@ -126,12 +130,9 @@ int main()
 
     cudaDeviceSynchronize();
 
-    cudaMemcpy(h_output, d_output, NUM_IMAGES * sizeof(float), cudaMemcpyDeviceToHost);
-    std::cout << "All tasks processed." << std::endl;
-
     for (int i = 0; i < 5; i++)
     {
-        std::cout << "Output[" << i << "] = " << h_output[i] << std::endl;
+        std::cout << "Output[" << i << "] = " << d_output[i] << std::endl;
     }
 
     cudaFree(d_ImageData);
