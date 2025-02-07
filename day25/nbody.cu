@@ -28,9 +28,12 @@ __device__ inline float3 subFloat3(const float3 &a, const float3 &b)
 }
 
 __device__ inline float3 scaleFloat3(const float3 &a, float s)
+
 {
-    return make_float3(a.x * s, a.y * s, a.z * s);
     
+    return make_float3(a.x * s, a.y * s, a.z * s);
+
+
 }
 
 __global__ void nbodyKernel(const Body *bodies, Body *new_bodies, int n, float dt)
