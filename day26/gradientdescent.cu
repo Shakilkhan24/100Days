@@ -52,7 +52,7 @@ int main()
     // weights
     for (int j = 0; j < d; j++)
     {
-        h_w[j] = 0.0f;
+        h_w[j] = 1.0f;
     }
 
     // Allocate device memory
