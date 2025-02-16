@@ -1,5 +1,9 @@
 #include <hip/hip_runtime.h>
+#include <rocblas/rocblas.h>
 #include <iostream>
+#include <cmath>
+#include <chrono>
+#include <limits>
 
 #define CHECK_HIP_ERROR(error)                                     \
     {                                                              \
@@ -11,25 +15,32 @@
         }                                                          \
     }
 
+#define CHECK_ROCBLAS_ERROR(error)                               \
+    {                                                            \
+        if ((error) != rocblas_status_success)                   \
+        {                                                        \
+            std::cerr << "rocBLAS error at line " << __LINE__    \
+                      << ": " << rocblas_status_to_string(error) \
+                      << std::endl;                              \
+            exit(EXIT_FAILURE);                                  \
+        }                                                        \
+    }
+
 #define BLOCK_SIZE 256
+
 __global__ void kernel3_registers(float *a, float *b, float *c, int N, float alpha, float beta)
 {
-    // Block Tile size
     constexpr int BN = 128;
     constexpr int BM = 128;
-    // Number of Row or column we read per batch
     constexpr int BK = 8;
 
-    // Thread Tile size
     constexpr int TN = 4;
     constexpr int TM = 4;
 
     constexpr int nbWaves = BLOCK_SIZE / 32;
-    // Wave Tile size 
     constexpr int WN = 64;
     constexpr int WM = BN * BM / nbWaves / WN;
 
-    // Number of wave on X & Y axis in the Block tile
     constexpr int nbWaveX = BN / WN;
     constexpr int nbWaveY = BM / WM;
 
@@ -38,25 +49,20 @@ __global__ void kernel3_registers(float *a, float *b, float *c, int N, float alp
     const int waveIdy = waveIndex / nbWaveX;
     const int indexInWave = threadIdx.x % 32;
 
-    // A wave is a block of 8x4 of the output matrix
     constexpr int nbThreadXPerWave = 8;
     constexpr int nbThreadYPerWave = 4;
 
-    // Thread coordinates in Wave
     const int idxInWave = indexInWave % nbThreadXPerWave;
     const int idyInWave = indexInWave / nbThreadXPerWave;
 
     constexpr int nbIterWaveN = WN / (nbThreadXPerWave * TN);
     constexpr int nbIterWaveM = WM / (nbThreadYPerWave * TM);
 
-    // Wave Sub-tile size
     constexpr int SUBWN = WN / nbIterWaveN;
     constexpr int SUBWM = WM / nbIterWaveM;
 
-    // Thread mapping to read BKxBN block from A
     int rAIdx = threadIdx.x % BK;
     int rAIdy = threadIdx.x / BK;
-    // Thread mapping to read BNxBK block from B
     int rBIdx = threadIdx.x % BN;
     int rBIdy = threadIdx.x / BN;
 
@@ -73,10 +79,8 @@ __global__ void kernel3_registers(float *a, float *b, float *c, int N, float alp
 
     float c_regs[TM * nbIterWaveM * TN * nbIterWaveN] = {0.0f};
 
-    // Iteration over BK blocks.
     for (int kId = 0; kId < N; kId += BK)
     {
-        // We populate the Shared Memory with Ks row and columns
         for (int i = 0; i < nbReadsB; i++)
         {
             int index_x = BN * blockIdx.x + rBIdx;
@@ -94,15 +98,11 @@ __global__ void kernel3_registers(float *a, float *b, float *c, int N, float alp
         __syncthreads();
         for (int k = 0; k < BK; k += 1)
         {
-            // we cache A & B for the entire Wave tile
             for (int iterWave = 0; iterWave < nbIterWaveN; iterWave++)
             {
                 for (int i = 0; i < TN; i++)
                 {
-                    int index = waveIdx * WN +     // waveId
-                                iterWave * SUBWN + // wave subtile
-                                TN * idxInWave +
-                                +i;
+                    int index = waveIdx * WN + iterWave * SUBWN + TN * idxInWave + i;
                     B_row[iterWave * TN + i] = Bs[k][index];
                 }
             }
@@ -111,16 +111,11 @@ __global__ void kernel3_registers(float *a, float *b, float *c, int N, float alp
             {
                 for (int i = 0; i < TM; i++)
                 {
-                    int index = waveIdy * WM +     // waveId
-                                iterWave * SUBWM + // wave subtile
-                                TM * idyInWave +
-                                i;
-
+                    int index = waveIdy * WM + iterWave * SUBWM + TM * idyInWave + i;
                     A_col[iterWave * TM + i] = As[k][index];
                 }
             }
 
-            // we accumulate to C_regs
             for (int iterWaveM = 0; iterWaveM < nbIterWaveM; iterWaveM++)
             {
                 for (int iterWaveN = 0; iterWaveN < nbIterWaveN; iterWaveN++)
@@ -138,7 +133,6 @@ __global__ void kernel3_registers(float *a, float *b, float *c, int N, float alp
             }
         }
         __syncthreads();
-       
     }
 
     for (int iterWaveM = 0; iterWaveM < nbIterWaveM; iterWaveM++)
@@ -161,25 +155,24 @@ __global__ void kernel3_registers(float *a, float *b, float *c, int N, float alp
 
 int main()
 {
-    const int N = 256; // Must be multiple of 128 for this kernel
+    const int N = 2560;
     const float alpha = 1.0f;
     const float beta = 0.0f;
 
-    // Host memory
     size_t size = N * N * sizeof(float);
-    float* hA = (float*)malloc(size);
-    float* hB = (float*)malloc(size);
-    float* hC = (float*)malloc(size);
+    float *hA = (float *)malloc(size);
+    float *hB = (float *)malloc(size);
+    float *hC = (float *)malloc(size);
+    float *hC_ref = (float *)malloc(size);
 
-    // Initialize data
-    for(int i = 0; i < N*N; i++)
+    for (int i = 0; i < N * N; i++)
     {
         hA[i] = static_cast<float>(i % 100);
         hB[i] = static_cast<float>((i * 2) % 100);
-        hC[i] = 0.0f; // Initialize C to zero
+        hC[i] = 0.0f;
+        hC_ref[i] = 0.0f;
     }
 
-    // Device memory
     float *dA, *dB, *dC;
     CHECK_HIP_ERROR(hipMalloc(&dA, size));
     CHECK_HIP_ERROR(hipMalloc(&dB, size));
@@ -189,31 +182,58 @@ int main()
     CHECK_HIP_ERROR(hipMemcpy(dB, hB, size, hipMemcpyHostToDevice));
     CHECK_HIP_ERROR(hipMemcpy(dC, hC, size, hipMemcpyHostToDevice));
 
-    // Kernel launch
     dim3 threadsPerBlock(256);
     dim3 blocksPerGrid(N / 128, N / 128);
-    hipLaunchKernelGGL(kernel3_registers, blocksPerGrid, threadsPerBlock, 0, 0, dA, dB, dC, N, alpha, beta);
-    CHECK_HIP_ERROR(hipGetLastError());
 
-    // Copy back and check a small portion
-    CHECK_HIP_ERROR(hipMemcpy(hC, dC, size, hipMemcpyDeviceToHost));
-
-    for(int i = 0; i < 4; i++)
+    float min_time_custom = std::numeric_limits<float>::max();
+    for(int i = 0; i < 5; i++)
     {
-        for(int j = 0; j < 4; j++)
+        CHECK_HIP_ERROR(hipMemcpy(dC, hC, size, hipMemcpyHostToDevice));
+
+        auto start_time_custom = std::chrono::high_resolution_clock::now();
+        hipLaunchKernelGGL(kernel3_registers, blocksPerGrid, threadsPerBlock, 0, 0, dA, dB, dC, N, alpha, beta);
+        CHECK_HIP_ERROR(hipGetLastError());
+        CHECK_HIP_ERROR(hipMemcpy(hC, dC, size, hipMemcpyDeviceToHost));
+        auto end_time_custom = std::chrono::high_resolution_clock::now();
+
+        std::chrono::duration<float> duration_custom = end_time_custom - start_time_custom;
+        if (duration_custom.count() < min_time_custom)
         {
-            std::cout << hC[i * N + j] << " ";
+            min_time_custom = duration_custom.count();
         }
-        std::cout << std::endl;
     }
 
-    // Cleanup
-    CHECK_HIP_ERROR(hipFree(dA));
-    CHECK_HIP_ERROR(hipFree(dB));
-    CHECK_HIP_ERROR(hipFree(dC));
+    float min_time_rocblas = std::numeric_limits<float>::max();
+    rocblas_handle handle;
+    rocblas_create_handle(&handle);
+    for(int i = 0; i < 5; i++)
+    {
+        CHECK_HIP_ERROR(hipMemcpy(dC, hC_ref, size, hipMemcpyHostToDevice));
+
+        auto start_time_rocblas = std::chrono::high_resolution_clock::now();
+        rocblas_sgemm(handle, rocblas_operation_none, rocblas_operation_none,
+                      N, N, N, &alpha, dA, N, dB, N, &beta, dC, N);
+        CHECK_ROCBLAS_ERROR(rocblas_get_matrix(N, N, sizeof(float), dC, N, hC_ref, N));
+        auto end_time_rocblas = std::chrono::high_resolution_clock::now();
+
+        std::chrono::duration<float> duration_rocblas = end_time_rocblas - start_time_rocblas;
+        if (duration_rocblas.count() < min_time_rocblas)
+        {
+            min_time_rocblas = duration_rocblas.count();
+        }
+    }
+
+    std::cout << "Our kernel execution time: " << min_time_custom << " seconds" << std::endl;
+    std::cout << "rocBLAS kernel execution time: " << min_time_rocblas << " seconds" << std::endl;
+
     free(hA);
     free(hB);
     free(hC);
+    free(hC_ref);
+    CHECK_HIP_ERROR(hipFree(dA));
+    CHECK_HIP_ERROR(hipFree(dB));
+    CHECK_HIP_ERROR(hipFree(dC));
+    rocblas_destroy_handle(handle);
 
     return 0;
 }
