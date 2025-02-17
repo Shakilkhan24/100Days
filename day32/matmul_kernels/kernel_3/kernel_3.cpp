@@ -226,6 +226,8 @@ int main()
     std::cout << "Our kernel execution time: " << min_time_custom << " seconds" << std::endl;
     std::cout << "rocBLAS kernel execution time: " << min_time_rocblas << " seconds" << std::endl;
 
+    std::cout << "Ratio of execution times: " << min_time_rocblas / min_time_custom * 100 <<" %"<< std::endl;
+
     free(hA);
     free(hB);
     free(hC);
