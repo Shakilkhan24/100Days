@@ -84,7 +84,7 @@ void init_weights(WEIGHTS &w) {
     w.W_UQ = (float*)malloc(QPROJ_DIM * DIM * sizeof(float));
     w.W_DKV = (float*)malloc(DIM * KVPROJ_DIM * sizeof(float));
     w.W_UKV = (float*)malloc(KVPROJ_DIM * DIM * 2 * sizeof(float));
-    w.WO = (float*)malloc(DIM * DIM * sizeof(float));
+        w.WO = (float*)malloc(DIM * DIM * sizeof(float));
     for (int i = 0; i < DIM * QPROJ_DIM; i++)
         w.W_DQ[i] = ((float)rand()/RAND_MAX - 0.5f) * 0.02f;
     for (int i = 0; i < QPROJ_DIM * DIM; i++)

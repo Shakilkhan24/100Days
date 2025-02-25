@@ -33,6 +33,7 @@ __global__ void __launch_bounds__(K9_NUM_THREADS)
     B += cCol * BN;
     C += cRow * BM * N + cCol * BN;
 
+    
     const uint innerRowA = threadIdx.x / (BK / 4);
     const uint innerColA = threadIdx.x % (BK / 4);
     constexpr uint rowStrideA = (K9_NUM_THREADS * 4) / BK;
