@@ -1,4 +1,4 @@
-triton.language.program_id(axis)     # for 3D operation, axis =0, 1 or 2 
+triton.language.program_id(axis)     # for example, for 3D operation, axis =0, 1 or 2 
 
 tl.load
 tl.store
@@ -17,4 +17,4 @@ arguments.to('cuda')
 GRID = (triton.cdiv(N, BLOCKSIZE),)
 __kernelfunction__[GRID](arguments**)
 
-output_pointer.cpu()
+output = output_pointer.cpu()
