@@ -1,0 +1,20 @@
+triton.language.program_id(axis)     # for 3D operation, axis =0, 1 or 2 
+
+tl.load
+tl.store
+tl.cat
+tl.dot 
+tl.softmax
+tl.arange 
+tl.permute
+tl.reshape
+tl.view
+
+
+and lot others,,, (simillar to torch operations)
+
+arguments.to('cuda')
+GRID = (triton.cdiv(N, BLOCKSIZE),)
+__kernelfunction__[GRID](arguments**)
+
+output_pointer.cpu()
