@@ -1,0 +1,27 @@
+[NOTE]
+
+i=blockIdx.x* blockDim.x + threadIdx.x                ..row..
+j=blockIdx.y * blockDim.y + threadIdx.y               ..column..  
+
+row major : a[i * row_size + j]                       a[i,j]..row_size=num of rows..
+
+
+
+mask = i< size_x && j< size_y 
+
+dim3 blockDim(BLOCK_SIZE, BLOCK_SIZE);                ..dim3..special built-in type 
+
+dim3 gridDim((sizeX + BLOCK_SIZE - 1) / BLOCK_SIZE, (sizeY + BLOCK_SIZE - 1) / BLOCK_SIZE);
+------------------------------------------------------------------
+triton: 
+   mask = i < size_x and j < size_y 
+   flat_indices= i * size_x + j
+
+
+   ---
+   matrix1/2/3- to('cuda') 
+   matrix1/2/3.flatten()
+   grid = (triton.cdiv(sizeX, BLOCK_SIZE), triton.cdiv(sizeY, BLOCK_SIZE))
+   addMatrix[grid](Matrix_A_flat, Matrix_B_flat, Matrix_C_flat, sizeX, sizeY, BLOCK_SIZE)
+   
+   now reshape Matrix_C_flat.reshape(size_x,size_y).cpu()              | (result)

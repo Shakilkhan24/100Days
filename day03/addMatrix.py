@@ -27,7 +27,7 @@ def addMatrix(Matrix_A,Matrix_B,Matrix_C,sizeX,sizeY,BLOCK_SIZE:tl.constexpr):
     A = tl.load(Matrix_A + flat_indicies,mask =valid_mask,other=0.0)
     B = tl.load(Matrix_B + flat_indicies,mask = valid_mask,other = 0.0)
     
-    C = A+B;
+    C = A+B
     
     tl.store(Matrix_C+flat_indicies,C,mask=valid_mask)
 
