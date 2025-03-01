@@ -1,0 +1,17 @@
+__global__ # kernel function representative 
+
+
+idx=blockIdx.x * blockDim.x + threadIdx.x , mask = idx < N 
+
+cudaMalloc((void**)&d_a,size)        ; size=N * sizeof(int/float/double)
+cudaMemcpy(des,source,size,cudaMemcpyHostToDevice/cudaMemcpyDeviceToHost) 
+cudaFree
+cudaDeviceSynchronize     ,,, wait for the device to finish all tasks  
+
+
+
+formulas: 
+   int threadsPerBlock = 256;
+   int blocksPerGrid = ( N + threadsPerBlock -1) / threadsPerBlock;
+
+func call: func_name<<<grid_size,block_size>>>(arguments**)
