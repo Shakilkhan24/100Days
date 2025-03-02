@@ -1,0 +1,6 @@
+mask = offset < X.shape[0] * X.shape[1]
+
+x = tl.load(X + offset, mask=mask, other=0.0)
+
+gamma_val = tl.load(gamma + tl.arange(0, BLOCK_SIZE), mask=mask, other=1.0)
+beta_val = tl.load(beta + tl.arange(0, BLOCK_SIZE), mask=mask, other=0.0)
